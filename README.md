@@ -48,6 +48,7 @@ Declare a [UserInterface][] with at least one [Component][] and insert it into t
 ```
 main.dart
 
+import 'dart:html';
 import 'package:reactify/reactify.dart' as reactify;
 
 void main() {
