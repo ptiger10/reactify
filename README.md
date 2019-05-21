@@ -1,4 +1,9 @@
 # reactify
+[![Pub](https://img.shields.io/pub/v/reactify.svg)](https://pub.dev/packages/reactify)
+[![Docs](https://img.shields.io/badge/docs-reactify-blue.svg)](https://pub.dev/documentation/reactify/)
+[![Build Status](https://travis-ci.com/ptiger10/reactify.svg?branch=master)](https://travis-ci.com/ptiger10/reactify)
+
+
 Reactive user interface components in pure Dart
 
 ## Philosophy
