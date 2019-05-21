@@ -2,8 +2,7 @@ name: reactify
 version: 1.0.0
 author: Dave Fort <ptiger10@gmail.com>
 documentation:
-repository: https://github.com/ptiger10/reactify
-homepage: 
+homepage: https://github.com/ptiger10/reactify
 description: 'Reactive user interface components in pure Dart'
 environment:
   sdk: '>=2.0.0 <3.0.0'

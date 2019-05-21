@@ -1,11 +1,11 @@
 import 'dart:html';
 
 // [START UserInterface]
-/// A UserInterface is a list of root `Components` and a `globalState` Map. There should be only one UserInterface per program.
+/// A UserInterface is a list of root [Component]s and a `globalState` Map. There should be only one UserInterface per program.
 ///
 /// Upon initialization, it renders every root [Component] as an HTML Element.
 ///
-/// Use `globalState` to track UI properties that affect all Components, such as `loggedIn` or `userRole`.
+/// Use the `globalState` Map to track UI properties that affect every [Component]. Common examples: `loggedIn`, `userRole`, `nightMode`.
 class UserInterface {
   List<Component> components;
   Map<String, dynamic> globalState;
@@ -57,14 +57,14 @@ class UserInterface {
           'setGlobal() failed: unable to set global state value: $key not in globalState ${globalState.keys}');
     }
     globalState[key] = value;
-    if (components != null) {
-      refreshAll();
-    }
+
+      _refreshAll();
+
     return;
   }
 
   /// refreshAll re-renders every component registered in the UserInterface.
-  void refreshAll() {
+  void _refreshAll() {
     if (components == null) {
       throw ValueException(
           'refreshAll() failed: components cannot be refreshed, since none have been added to the UserInterface');
@@ -73,20 +73,19 @@ class UserInterface {
       throw ValueException('refreshAll() failed: UserInterface has not been initialized');
     }
     for (var i = 0; i < components.length; i++) {
-      components[i].refresh();
+      components[i]._refresh();
     }
   }
 }
 // [END UserInterface]
 
 // [START Component]
-/// A Component is a building block of a UserInterface.
-///
-/// Every Component should have a template that renders a vanilla Dart HTML element.
-/// Components without `root` are considered root components and may have independent state, computedState, and handlers.
-/// Components with `root` are considered sub-components. They receive state, computedState and handlers that reference their root.
-/// Whenever a sub-component calls `.setState()`, it is setting the state of its root.
-/// Sub-components may retain their own computedState values, as long as they are differently named from their root.
+/// A Component is a building block of a UserInterface. Every Component should have a template that renders a vanilla Dart HTML element.
+/// 
+/// A Component with a null `root` property is considered a "root component" and may have independent `state`, `computedState`, and `handlers`.
+/// Components with a non-null `root` are considered "sub-components." They receive `state`, `computedState` and `handlers` that from their root parent.
+/// Whenever a sub-component calls `.setState()`, it is actually setting the state of its root component.
+/// Sub-components may retain their own `computedState` values, as long as they are differently named from their root.
 class Component {
   String id;
 
@@ -107,7 +106,7 @@ class Component {
   ///
   /// A handler should be called in tandem with an event listener like so: `.listen((e) => self.getHandler('key', e)) `
   Map<String, void Function(Component) Function(Event)> handlers;
-  Component root;
+  Component _root;
 
 
   Component(
@@ -115,12 +114,11 @@ class Component {
       this.template,
       this.state,
       this.computedState,
-      this.handlers,
-      this.root});
+      this.handlers});
 
   @override
   String toString() {
-    return "Component(id: $id, root: $root)";
+    return "Component(id: $id, root: $_root)";
   }
 
   /// render converts a Component's template into an HTML Element by calling the template's callback function.
@@ -148,12 +146,12 @@ class Component {
   /// If a Component does not have a root, then it is considered a root itself.
   /// A root Component must have an id that is set during construction.
   /// If a root Component id has been changed outside the constructor function, this will likely throw an exception.
-  void refresh() {
+  void _refresh() {
     String selector;
     Element replacement;
-    if (root != null) {
-      selector = "component-${root.id}";
-      replacement = root.render();
+    if (_root != null) {
+      selector = "component-${_root.id}";
+      replacement = _root.render();
     } else {
       selector = "component-$id";
       replacement = render();
@@ -193,7 +191,7 @@ class Component {
     }
     state[key] = value;
 
-    refresh();
+    _refresh();
   }
 
   /// getComputed calculates a component value.
@@ -260,10 +258,10 @@ class Component {
     component.state = state;
     component.handlers = handlers;
 
-    if (root == null) {
-      component.root = this;
+    if (_root == null) {
+      component._root = this;
     } else {
-      component.root = root;
+      component._root = _root;
     }
     return component.render();
   }

@@ -4,7 +4,6 @@ import 'package:reactify/reactify.dart' as reactify;
 void main() {
   document.getElementById("root").replaceWith(UI.initialize());
 }
-
 final UI = reactify.UserInterface(components: [Root]);
 
 final Root = reactify.Component(

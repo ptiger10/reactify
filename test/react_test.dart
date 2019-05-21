@@ -4,9 +4,7 @@ import 'package:reactify/reactify.dart';
 import 'dart:html';
 
 void main() {
-  setUp(() {
-    document.body.replaceWith(BodyElement());
-  });
+  setUp(() => document.body.replaceWith(BodyElement()));
   group('Expected exceptions: UserInterface', () {
     test(
         ".getGlobal() with no global state",
@@ -30,14 +28,16 @@ void main() {
             throwsA(TypeMatcher<KeyException>())));
 
     test(
-        ".refreshAll() with no components",
-        () => expect(() => UserInterface()..refreshAll(),
+        ".setGlobal() with no components (triggers .refreshAll())",
+        () => expect(
+            () => UserInterface(globalState: {'test': true})
+              ..setGlobal('test', false),
             throwsA(TypeMatcher<ValueException>())));
 
-    test(".refreshAll() prior to initialize()", () {
+    test(".setGlobal() prior to initialize()", () {
       var c1 = Component(id: '1', template: (_) => DivElement());
-      var UI = UserInterface(components: [c1]);
-      expect(() => UI.refreshAll(), throwsA((TypeMatcher<ValueException>())));
+      var UI = UserInterface(components: [c1], globalState: {'test': true});
+      expect(() => UI.setGlobal('test', false), throwsA((TypeMatcher<ValueException>())));
     });
 
     test(
@@ -58,16 +58,11 @@ void main() {
       expect(() => c.render(), throwsA(TypeMatcher<ValueException>()));
     });
 
-    test(".render(): root component with no id", () {
-      var c = Component(template: (_) => DivElement());
-      expect(() => c.refresh(), throwsA(TypeMatcher<ValueException>()));
+    test(".setState(): root component with no id", () {
+      var c = Component(template: (_) => DivElement(), state: {'test': true});
+      expect(() => c.setState('test', false), throwsA(TypeMatcher<ValueException>()));
     });
 
-    test(".refresh(): root component with updated id", () {
-      var c = Component(id: "original", template: (self) => DivElement());
-      c.id = "new";
-      expect(() => c.refresh(), throwsA(TypeMatcher<ValueException>()));
-    });
     test(".getState() with null state", () {
       var c = Component(template: (self) => DivElement());
       expect(() => c.getState('noSuchKey'),
@@ -150,10 +145,14 @@ void main() {
   });
 
   group('Working correctly: UserInterface', () {
-    test(".setGlobal()", () {
-      var UI = UserInterface(globalState: {'loggedIn': false})
-        ..setGlobal('loggedIn', true);
-      expect(UI.getGlobal('loggedIn'), equals(true));
+    test(".setGlobal() and .getGlobal() (which also tests ._refreshAll() and Component._refresh()", () {
+      var UI = UserInterface(globalState: {'test': "0"});
+      var c = Component(template: (_) => DivElement()..text=UI.getGlobal('test'), id: '1');
+      UI.components = [c];
+      document.body.children.add(UI.initialize());
+      expect(document.querySelector("#component-1").text, equals('0'));
+      UI.setGlobal('test', '1');
+      expect(document.querySelector("#component-1").text, equals('1'));
     });
     test(".initialize()", () {
       var c1 = Component(template: (_) => DivElement());
@@ -165,21 +164,8 @@ void main() {
         ..children.addAll([DivElement(), ButtonElement()]);
       expect(UI.initialize().outerHtml, equals(want.outerHtml));
     });
-
-    test(".refreshAll()", () {
-      var c1 = Component(id: '1', template: (_) => DivElement());
-      var UI = UserInterface(components: [c1]);
-      document.body.children.add(UI.initialize());
-
-      UI.initialize();
-      var c2 = Component(id: '1', template: (_) => ButtonElement());
-      UI.components[0] = c2;
-
-      UI.refreshAll();
-      expect(
-          UI.components[0].render().outerHtml, equals(c2.render().outerHtml));
-    });
   });
+
 
   group('Working correctly: Component', () {
     test(".render()", () {
@@ -191,17 +177,6 @@ void main() {
       expect(c.render().outerHtml, equals(want.outerHtml));
     });
 
-    // unexpected: this test inserts the updatedTest node in front of originalTest
-    // when run outside of test framework, updatedTest node replaces origianlTest completely
-    test(".refresh()", () {
-      var c = Component(
-          id: '1', template: (_) => DivElement()..className = 'originalTest');
-      document.body.children.add(c.render());
-      var want = DivElement()..className = 'updatedTest';
-      c.template = (_) => want;
-      c.refresh();
-      expect(document.body.children.first.outerHtml, equals(want.outerHtml));
-    });
 
     test(".getState()", () {
       var c = Component(
@@ -225,7 +200,7 @@ void main() {
       expect(c.state['test'], true);
     });
 
-    test(".getComputed()", () {
+    test(".getComputed() and setState()", () {
       var c = Component(
           id: '1',
           template: (self) => DivElement()
@@ -244,11 +219,9 @@ void main() {
             }
           });
       document.body.children.add(c.render());
-      expect(
-          document.body.children.first.text, equals("original"));
+      expect(document.body.children.first.text, equals("original"));
       querySelector('#component-1.root').dispatchEvent(MouseEvent('click'));
-      expect(
-          document.body.children.first.text, equals("modified"));
+      expect(document.body.children.first.text, equals("modified"));
     });
 
     test(".getHandler()", () {
