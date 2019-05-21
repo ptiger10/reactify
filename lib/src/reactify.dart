@@ -1,23 +1,25 @@
 import 'dart:html';
+import 'package:meta/meta.dart';
 
 // [START UserInterface]
-/// A UserInterface is a list of root [Component]s and a `globalState` Map. There should be only one UserInterface per program.
+/// A UserInterface is a List of root [Component]s and optional `globalState`.
 ///
-/// Upon initialization, it renders every root [Component] as an HTML Element.
-///
-/// Use the `globalState` Map to track UI properties that affect every [Component]. Common examples: `loggedIn`, `userRole`, `nightMode`.
+/// Upon initialization, every [Component] is rendered as an HTML Element.
 class UserInterface {
+  /// The components List includes every root [Component] that will be rendered in the UI.
   List<Component> components;
+  /// The globalState Map identifies UI-level properties that can affect every [Component]. Common keys: `loggedIn`, `userRole`, `nightMode`.
   Map<String, dynamic> globalState;
   bool _initialized;
 
-  UserInterface({List<Component> components, Map<String, dynamic> globalState}) {
+  /// Creates a new UserInterface with optional `globalState`. 
+  UserInterface({@required List<Component> components, Map<String, dynamic> globalState}) {
    this.components = components;
    this.globalState = globalState;
    _initialized = false;
   }
 
-  /// initialize renders every root [Component] in the [UserInterface].
+  /// initialize renders every root [Component] in the [UserInterface] for the first time.
   /// The results can easily be inserted into an HTML document: `document.getElementById("...").replaceWith(UI.initialize());`
   Element initialize() {
     if (components == null) {
@@ -32,8 +34,8 @@ class UserInterface {
     return root;
   }
 
-  /// getGlobal gets a property on the UserInterface object.
-  /// If globalState has not been initialized or key does not exist, throws an exception.
+  /// getGlobal gets a property from the [globalState] Map.
+  /// If `globalState` is null or key does not exist, throws an exception.
   dynamic getGlobal(String key) {
     if (globalState == null) {
       throw ValueException(
@@ -46,7 +48,8 @@ class UserInterface {
     return globalState[key];
   }
 
-  /// setGlobal sets a property on the UserInterface object then re-renders every Component.
+  /// setGlobal sets a property on the in the [globalState] Map, then re-renders every [Component] in the UI.
+/// If `globalState` is null or key does not exist, throws an exception.
   void setGlobal(String key, dynamic value) {
     if (globalState == null) {
       throw ValueException(
@@ -63,7 +66,7 @@ class UserInterface {
     return;
   }
 
-  /// refreshAll re-renders every component registered in the UserInterface.
+  /// _refreshAll re-renders every component registered in the UserInterface.
   void _refreshAll() {
     if (components == null) {
       throw ValueException(
@@ -80,38 +83,45 @@ class UserInterface {
 // [END UserInterface]
 
 // [START Component]
-/// A Component is a building block of a UserInterface. Every Component should have a template that renders a vanilla Dart HTML element.
+/// A Component is a building block of a [UserInterface]. Every Component should have a template that renders a vanilla Dart HTML element.
 /// 
-/// A Component with a null `root` property is considered a "root component" and may have independent `state`, `computedState`, and `handlers`.
-/// Components with a non-null `root` are considered "sub-components." They receive `state`, `computedState` and `handlers` that from their root parent.
-/// Whenever a sub-component calls `.setState()`, it is actually setting the state of its root component.
-/// Sub-components may retain their own `computedState` values, as long as they are differently named from their root.
+/// There are two types of Components: 
+/// 
+/// "root components" are standalone components that may be registered in a [UserInterface]. 
+/// They have independent [state], [computedState], and [handlers].
+/// They are not injected into other components.
+/// 
+/// "sub-components" are child components that are injected into either a root component or another sub-component with a root. 
+/// They receive a copy of the root's `state`, `computedState` and `handlers`.
+/// Whenever a sub-component calls [Component.setState], it is actually setting the `state` of its root component.
+/// Sub-components may retain their own `computedState` values, as long as they are uniquely keyed from the root component.
 class Component {
+  /// An id that will be prepended with `component-` and added to the element in the DOM. `id: 'counter'` -> `<id=component-counter>`
   String id;
 
-  /// A template is a callback function that returns a standard Dart HTML Element when called by `Component.render()`.
+  /// A template is a callback function that returns a standard Dart HTML Element when called by [Component.render].
   Element Function(Component) template;
 
-  /// The state Map identifies state values, which are any values that can be referenced or updated directly.
+  /// The state Map identifies `state` values, which are any values that can be referenced or updated directly.
   ///
-  /// Get a state value with `Component.getState("key")` and set one with `Component.setState("key", newValue)`.
+  /// Get a state value with [Component.getState] and set one with [Component.setState].
   Map<String, dynamic> state;
 
-  /// The computedState Map identifies callback functions that can reference the root Component, including its state.
+  /// The computedState Map identifies callback functions that can perform computations or access other [Component] properties, including `state`.
   ///
-  /// A computed callback is called by `Component.getComputed("...")`. Computed callback functions cannot be updated directly.
+  /// A computed callback is called by [Component.getComputed]. Computed callback functions cannot be updated directly.
   Map<String, dynamic Function(Component)> computedState;
 
-  /// A handler is an event listener that returns a callback function.
-  ///
-  /// A handler should be called in tandem with an event listener like so: `.listen((e) => self.getHandler('key', e)) `
+  /// A handler is an event listener that returns a callback function. Example: `key: (e) => (self) => self.setState('...', ...)`
+  /// 
+  /// A handler should be passed into a sub-component's event listener, like so: `onClick.listen((e) => self.getHandler('key', e))`
   Map<String, void Function(Component) Function(Event)> handlers;
   Component _root;
 
-
+  /// Creates a new Component with a required [template]. 
   Component(
-      {this.id,
-      this.template,
+      {@required this.template,
+      this.id,
       this.state,
       this.computedState,
       this.handlers});
@@ -141,7 +151,7 @@ class Component {
     return elem;
   }
 
-  /// refresh re-renders a root Component and replaces it in HTML using a DOM selector.
+  /// _refresh re-renders a root Component and replaces it in HTML using a DOM selector.
   ///
   /// If a Component does not have a root, then it is considered a root itself.
   /// A root Component must have an id that is set during construction.
@@ -166,7 +176,7 @@ class Component {
     return;
   }
 
-  /// getState fetches a state value on a root component.
+  /// getState fetches a [state] value on a root component.
   /// If key does not exist in the root state, this throws an exception.
   dynamic getState(String key) {
     if (state == null) {
@@ -179,7 +189,7 @@ class Component {
     return state[key];
   }
 
-  /// setState changes a state value on a root component and then re-renders from the root.
+  /// setState changes a [state] value on a root component and then re-renders from the root.
   /// If key does not exist in the root state, this throws an exception.
   void setState(String key, dynamic value) {
     if (state == null) {
@@ -194,9 +204,9 @@ class Component {
     _refresh();
   }
 
-  /// getComputed calculates a component value.
+  /// getComputed fetches a computed value from [computedState].
   ///
-  /// Useful for making a composite value from existing state values or external values.
+  /// Useful for deriving a value from existing [state] values or external values.
   dynamic getComputed(String key) {
     if (computedState == null) {
       throw ValueException(
@@ -217,11 +227,11 @@ class Component {
     return cb;
   }
 
-  /// getHandler returns a handler function and inserts an event into it.
+  /// getHandler fetches a handler function from [handlers] and supplies an event into it.
   ///
   /// Useful for triggering a state change on a root component from a sub-component.
   ///
-  /// It should only be used as the return value in an event listener callback function.
+  /// A handler should be used as the return value in an event listener callback function.
   /// Example: `..onClick.listen((e) => self.getHandler('...', e))`
   void getHandler(String key, Event e) {
     if (handlers == null) {
@@ -238,10 +248,10 @@ class Component {
   /// injectComponent adds a sub-component to the current component. 
   /// Useful for giving a sub-component access to root component properties.
   ///
-  /// First injects the current component's state, computedState, and handlers,
-  /// and then renders the sub-component's template as an Element.
-  /// If the instance component has no root, then it will serve as the root for all sub-components.
-  /// The root will overwrite all sub-component states and handlers, but the sub-component may define its own computed states.
+  /// First injects the current component's [state], [computedState], and [handlers],
+  /// and then renders the sub-component's template as an HTML Element.
+  /// If the calling component is a root component, then the injected component and all its children will have it as their root.
+  /// The root will overwrite all sub-component states and handlers, but the sub-component may maintain unique computedState keys.
 
 
   Element injectComponent(Component component) {
@@ -269,10 +279,11 @@ class Component {
 // [END Component]
 
 // [START Exceptions]
-abstract class ReactifyException implements Exception {
+/// ReactifyException is an abstract base class for custom exceptions
+abstract class _ReactifyException implements Exception {
   String message;
   Component component;
-  ReactifyException(this.message, [this.component]);
+  _ReactifyException(this.message, [this.component]);
   String toString() {
     if (component != null) {
       return "${this.runtimeType} with $component\n$message";
@@ -282,12 +293,16 @@ abstract class ReactifyException implements Exception {
   }
 }
 
-class KeyException extends ReactifyException {
+/// A KeyException is thrown whenever a missing key has been referenced at runtime, such as in 
+/// [Component.getState], [Component.setState], [Component.getComputed], or [Component.getHandler].
+class KeyException extends _ReactifyException {
   KeyException(String message, [Component component])
       : super(message, component);
 }
 
-class ValueException extends ReactifyException {
+/// A ValueException is thrown whenever an invalid value has been called, 
+/// such as initializing a [UserInterface] with no components.
+class ValueException extends _ReactifyException {
   ValueException(String message, [Component component])
       : super(message, component);
 }

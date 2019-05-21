@@ -4,9 +4,10 @@ Reactive user interface components in pure Dart
 ## Philosophy
 Typed, tested, and tiny. 
 
- No framework, no additional dependencies, just two straightforward classes: `UserInterface` and `Component`. Harness Dart 2's powerful built-in `dart:html` library while utilizing reactive best practices:
+ No framework, minimal dependencies, just two straightforward classes: [UserInterface][] and [Component][]. Harness Dart 2's powerful built-in `dart:html` library while utilizing reactive best practices:
 
-- Everything is a Component, which renders as one or more HTML elements
+
+- Everything is a Component, which renders as one or more vanilla HTML elements
 - Instead of hard-coding values into components, read values from a "state" property
 - State is passed downwards from root components to sub-components, never upwards
 - Sub-components may be supplied with event listeners that emit state changes back upwards when they are triggered
@@ -30,7 +31,7 @@ index.html
 </body>
 ```
 
-Define a UserInterface with at least one Component and insert it into the HTML.
+Declare a [UserInterface][] with at least one [Component][] and insert it into the HTML.
 ```
 main.dart
 
@@ -47,20 +48,20 @@ final ExampleComponent = reactify.Component(
 ```  
 
 ## Demystifying the callback properties
-Reactive interfaces use callback functions extensively, and you will find them in three Component properties. Because they are callbacks, they allow you to define interactions with a component's other properties, such as its `state`, *before* the component has been constructed.
+Reactive web development uses callback functions extensively, and you will find them in three Component properties. Because they are callbacks, they allow you to define interactions with a component's other properties, such as its `state`, *before* the component has been constructed.
 
 ### template
-Every Component should have a template. This is a single callback function that gets rendered as an HTML element whenever 1) a UserInterface containing the Component is initialized, or 2) the Component's root state is changed at any point following initialization. The simplest template is `template: (_) => DivElement()`, which renders as `<div></div>`. 
+Every Component should have a `template`. This is a single callback function that gets rendered as an HTML element whenever 1) a [UserInterface][] containing the [Component][] is initialized, or 2) the Component's root state is changed at any point following initialization. The simplest template is `template: (_) => DivElement()`, which renders as `<div></div>`. 
 
 The callback function accepts one argument, which is a reference to that component itself.  
 
 While you may name it however you like, a helpful convention is to name this argument `_` if you do not need to acces it, and `self` if you do, as in: `template: (self) => DivElement()..text = self.getState('example')`.
 
 ### computedState
-`computedState` is a map of callback functions that each return a dynamic value. As with template, each callback function accepts one argument, which is a reference to that component itself.
+`computedState` is a map of callback functions that each return a dynamic value. As with template, each callback function accepts one argument, which is a reference to that component itself. These are useful for deriving a value from existing state values or external values.
 
 ### handlers
-`handlers` is a map of handlers. Each `handler` is actually two callback functions chained together: an event listener (callback function #1), which returns a callback containing the component itself (callback function #2), which may trigger side effects but should return nothing. A helpful convention is to name the Event argument `_` if you do not need to access it, and `e` if you do, as in: `handlers: {'exampleHandler': (e) => (self) => self.setState('example', (e.target as InputElement).value)}`.
+`handlers` is a map of handlers. Each `handler` is actually two callback functions chained together: an event listener (callback function #1), which returns a callback containing the component itself (callback function #2), which may trigger side effects but should return nothing. A helpful convention is to name the Event argument `_` if you do not need to access it, and `e` if you do, as in: `handlers: {'exampleHandler': (e) => (self) => self.setState('example', (e.target as InputElement).value)}`. This can then be called by a sub-component, as in: `InputElement()..onChange.listen((e) => self.getHandler('exampleHandler', e))`.
 
 
 ## Advanced Usage
@@ -120,6 +121,7 @@ final SubComponent = reactify.Component(
 
 For other snippets, see the [Dart UI cookbook](example/dart_ui_cookbook.md)
 
+
 ## Transpiling to Javascript
 Dart is not supported by browsers natively, so must be converted to Javascript first. Two command line options for this:
 - Option 1: `$ dart2js` ([docs](https://dart.dev/tools/dart2js)). If you prefer this route for development, I still recommend auto-transpiling on save.*
@@ -160,3 +162,6 @@ and a keyboard shortcut could be:
 **Gotchas of `webdev serve`: if `/web` contains a `xxx.dart` file, by default it will be transpiled and saved as `xxx.dart.js` within a hidden output folder. The output folder can be changed, but it cannot be merged with your current working directory. Plus, the file naming convention cannot be changed. 
 
 By contrast, `dart2js` saves the .js file within the current working directory, and the file naming convention can be changed with a flag. Thus, if you want to serve `index.html` yourself or load it manually in a browser, you can first run `dart2js` to create the `.js` file in the current directory.
+
+ [UserInterface]: https://pub.dartlang.org/documentation/reactify/latest/reactify/UserInterface-class.html
+ [Component]: https://pub.dartlang.org/documentation/reactify/latest/reactify/Component-class.html

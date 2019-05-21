@@ -35,11 +35,12 @@ final Child = reactify.Component(
     template: (self) => DivElement()..style.border = '1px dashed black' .. style.margin = '10px'.. style.padding = '10px'
       ..children.addAll([
         DivElement()
-          ..text = 'Child count (=root*2): ${self.getState('count') * 2}',
+          ..text = 'Child count (=root*2): ${self.getComputed('computed')}',
         ButtonElement()
           ..text = '+1 to root count'
           ..onClick.listen((_) => self.getHandler('incrementCount', _)),
         ButtonElement()
           ..text = 'reset'
-          ..onClick.listen((_) => self.getHandler('resetCount', _))
-      ]));
+          ..onClick.listen((_) => self.getHandler('resetCount', _)),
+      ]),
+      computedState: {'computed': (self) => self.getState('count') * 2});
