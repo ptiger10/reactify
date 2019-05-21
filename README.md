@@ -20,7 +20,15 @@ Typed, tested, and tiny.
 
 Write in Dart, transpile to Javascript, then use in HTML just like you'd expect.
 
+## Installing
+
+[Installation Instructions](https://pub.dev/packages/reactify#-installing-tab-)
+
+`import 'package:reactify/reactify.dart' as reactify;`
+
 ## Basic Usage
+For working examples, see [here](example/README.md).
+
 If you are unfamiliar with how Dart implements HTML elements and DOM manipulation with `dart:html`, you may want to reference the excellent official tutorial [here](https://dart.dev/tutorials/web/low-level-html/connect-dart-html).
 
 Start with an HTML file with a script tag and a hookable element.
@@ -40,6 +48,8 @@ Declare a [UserInterface][] with at least one [Component][] and insert it into t
 ```
 main.dart
 
+import 'package:reactify/reactify.dart' as reactify;
+
 void main() {
   document.getElementById("root").replaceWith(ExampleUI.initialize());
 }
@@ -50,10 +60,15 @@ final ExampleComponent = reactify.Component(
     id: 'sample',
     template: (self) => DivElement()..text = self.getState('static'),
     state: {'static': 'This is a sample Component'});
-```  
+```
+
+Browser rendering of `index.html` after transpiling to Javascript (see below)
+```
+This is a sample Component
+```
 
 ## Demystifying the callback properties
-Reactive web development uses callback functions extensively, and you will find them in three Component properties. Because they are callbacks, they allow you to define interactions with a component's other properties, such as its `state`, *before* the component has been constructed.
+Reactive web development uses callback functions extensively, and you will find them in three Component properties: `template`, `computedState`, and `handlers`. Callbacks allow the caller to define interactions with a component's other properties, such as its `state`, *before* the component has been constructed.
 
 ### template
 Every Component should have a `template`. This is a single callback function that gets rendered as an HTML element whenever 1) a [UserInterface][] containing the [Component][] is initialized, or 2) the Component's root state is changed at any point following initialization. The simplest template is `template: (_) => DivElement()`, which renders as `<div></div>`. 
@@ -125,7 +140,6 @@ final SubComponent = reactify.Component(
 ```
 
 For other snippets, see the [Dart UI cookbook](example/dart_ui_cookbook.md)
-
 
 ## Transpiling to Javascript
 Dart is not supported by browsers natively, so must be converted to Javascript first. Two command line options for this:
