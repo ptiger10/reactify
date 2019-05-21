@@ -63,9 +63,11 @@ final ExampleComponent = reactify.Component(
     state: {'static': 'This is a sample Component'});
 ```
 
-Browser rendering of `index.html` after transpiling to Javascript (see below)
+After transpiling Dart to Javascript (see below), `index.html` renders in a browser as: 
 ```
-This is a sample Component
+<div id="root">
+  <div id="component-sample">This is a sample Component</div>
+</div>
 ```
 
 ## Demystifying the callback properties
@@ -82,7 +84,7 @@ While you may name it however you like, a helpful convention is to name this arg
 `computedState` is a map of callback functions that each return a dynamic value. As with template, each callback function accepts one argument, which is a reference to that component itself. These are useful for deriving a value from existing state values or external values.
 
 ### handlers
-`handlers` is a map of handlers. Each `handler` is actually two callback functions chained together: an event listener (callback function #1), which returns a callback containing the component itself (callback function #2), which may trigger side effects but should return nothing. A helpful convention is to name the Event argument `_` if you do not need to access it, and `e` if you do, as in: `handlers: {'exampleHandler': (e) => (self) => self.setState('example', (e.target as InputElement).value)}`. This can then be called by a sub-component, as in: `InputElement()..onChange.listen((e) => self.getHandler('exampleHandler', e))`.
+`handlers` is a map of handlers. Each `handler` is actually two callback functions chained together: an event listener (callback function #1), which returns a callback containing a reference to the component itself (callback function #2), which may trigger side effects but should return nothing. A helpful convention is to name the Event argument `_` if you do not need to access it, and `e` if you do, as in: `handlers: {'exampleHandler': (e) => (self) => self.setState('example', (e.target as InputElement).value)}`. This can then be called by a sub-component, as in: `InputElement()..onChange.listen((e) => self.getHandler('exampleHandler', e))`.
 
 
 ## Advanced Usage
