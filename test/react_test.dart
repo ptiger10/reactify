@@ -8,28 +8,33 @@ void main() {
   group('Expected exceptions: UserInterface', () {
     test(
         ".getGlobal() with no global state",
+        // ignore: missing_required_param
         () => expect(() => UserInterface()..getGlobal('test'),
             throwsA(TypeMatcher<ValueException>())));
 
     test(
         ".getGlobal() with unset key",
+        // ignore: missing_required_param
         () => expect(() => UserInterface(globalState: {})..getGlobal('test'),
             throwsA(TypeMatcher<KeyException>())));
 
     test(
         ".setGlobal() with no global state",
+        // ignore: missing_required_param
         () => expect(() => UserInterface()..setGlobal('test', '123'),
             throwsA(TypeMatcher<ValueException>())));
 
     test(
         ".setGlobal() with unset key",
         () => expect(
+            // ignore: missing_required_param
             () => UserInterface(globalState: {})..setGlobal('test', '123'),
             throwsA(TypeMatcher<KeyException>())));
 
     test(
         ".setGlobal() with no components (triggers .refreshAll())",
         () => expect(
+            // ignore: missing_required_param
             () => UserInterface(globalState: {'test': true})
               ..setGlobal('test', false),
             throwsA(TypeMatcher<ValueException>())));
@@ -37,11 +42,13 @@ void main() {
     test(".setGlobal() prior to initialize()", () {
       var c1 = Component(id: '1', template: (_) => DivElement());
       var UI = UserInterface(components: [c1], globalState: {'test': true});
-      expect(() => UI.setGlobal('test', false), throwsA((TypeMatcher<ValueException>())));
+      expect(() => UI.setGlobal('test', false),
+          throwsA((TypeMatcher<ValueException>())));
     });
 
     test(
         ".initialize() with no components",
+        // ignore: missing_required_param
         () => expect(() => UserInterface()..initialize(),
             throwsA(TypeMatcher<ValueException>())));
   });
@@ -60,7 +67,8 @@ void main() {
 
     test(".setState(): root component with no id", () {
       var c = Component(template: (_) => DivElement(), state: {'test': true});
-      expect(() => c.setState('test', false), throwsA(TypeMatcher<ValueException>()));
+      expect(() => c.setState('test', false),
+          throwsA(TypeMatcher<ValueException>()));
     });
 
     test(".getState() with null state", () {
@@ -145,9 +153,13 @@ void main() {
   });
 
   group('Working correctly: UserInterface', () {
-    test(".setGlobal() and .getGlobal() (which also tests ._refreshAll() and Component._refresh()", () {
+    test(
+        ".setGlobal() and .getGlobal() (which also tests ._refreshAll() and Component._refresh()",
+        () {
+      // ignore: missing_required_param
       var UI = UserInterface(globalState: {'test': "0"});
-      var c = Component(template: (_) => DivElement()..text=UI.getGlobal('test'), id: '1');
+      var c = Component(
+          template: (_) => DivElement()..text = UI.getGlobal('test'), id: '1');
       UI.components = [c];
       document.body.children.add(UI.initialize());
       expect(document.querySelector("#component-1").text, equals('0'));
@@ -166,7 +178,6 @@ void main() {
     });
   });
 
-
   group('Working correctly: Component', () {
     test(".render()", () {
       var c =
@@ -176,7 +187,6 @@ void main() {
         ..id = 'component-1';
       expect(c.render().outerHtml, equals(want.outerHtml));
     });
-
 
     test(".getState()", () {
       var c = Component(

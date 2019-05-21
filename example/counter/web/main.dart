@@ -4,6 +4,7 @@ import 'package:reactify/reactify.dart' as reactify;
 void main() {
   document.getElementById("root").replaceWith(UI.initialize());
 }
+
 final UI = reactify.UserInterface(components: [Root]);
 
 final Root = reactify.Component(
@@ -32,7 +33,10 @@ final Root = reactify.Component(
 
 final Child = reactify.Component(
     id: 'child',
-    template: (self) => DivElement()..style.border = '1px dashed black' .. style.margin = '10px'.. style.padding = '10px'
+    template: (self) => DivElement()
+      ..style.border = '1px dashed black'
+      ..style.margin = '10px'
+      ..style.padding = '10px'
       ..children.addAll([
         DivElement()
           ..text = 'Child count (=root*2): ${self.getComputed('computed')}',
@@ -43,4 +47,4 @@ final Child = reactify.Component(
           ..text = 'reset'
           ..onClick.listen((_) => self.getHandler('resetCount', _)),
       ]),
-      computedState: {'computed': (self) => self.getState('count') * 2});
+    computedState: {'computed': (self) => self.getState('count') * 2});

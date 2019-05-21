@@ -8,15 +8,18 @@ import 'package:meta/meta.dart';
 class UserInterface {
   /// The components List includes every root [Component] that will be rendered in the UI.
   List<Component> components;
+
   /// The globalState Map identifies UI-level properties that can affect every [Component]. Common keys: `loggedIn`, `userRole`, `nightMode`.
   Map<String, dynamic> globalState;
   bool _initialized;
 
-  /// Creates a new UserInterface with optional `globalState`. 
-  UserInterface({@required List<Component> components, Map<String, dynamic> globalState}) {
-   this.components = components;
-   this.globalState = globalState;
-   _initialized = false;
+  /// Creates a new UserInterface with optional `globalState`.
+  UserInterface(
+      {@required List<Component> components,
+      Map<String, dynamic> globalState}) {
+    this.components = components;
+    this.globalState = globalState;
+    _initialized = false;
   }
 
   /// initialize renders every root [Component] in the [UserInterface] for the first time.
@@ -49,7 +52,7 @@ class UserInterface {
   }
 
   /// setGlobal sets a property on the in the [globalState] Map, then re-renders every [Component] in the UI.
-/// If `globalState` is null or key does not exist, throws an exception.
+  /// If `globalState` is null or key does not exist, throws an exception.
   void setGlobal(String key, dynamic value) {
     if (globalState == null) {
       throw ValueException(
@@ -61,7 +64,7 @@ class UserInterface {
     }
     globalState[key] = value;
 
-      _refreshAll();
+    _refreshAll();
 
     return;
   }
@@ -73,7 +76,8 @@ class UserInterface {
           'refreshAll() failed: components cannot be refreshed, since none have been added to the UserInterface');
     }
     if (!_initialized) {
-      throw ValueException('refreshAll() failed: UserInterface has not been initialized');
+      throw ValueException(
+          'refreshAll() failed: UserInterface has not been initialized');
     }
     for (var i = 0; i < components.length; i++) {
       components[i]._refresh();
@@ -84,14 +88,14 @@ class UserInterface {
 
 // [START Component]
 /// A Component is a building block of a [UserInterface]. Every Component should have a template that renders a vanilla Dart HTML element.
-/// 
-/// There are two types of Components: 
-/// 
-/// "root components" are standalone components that may be registered in a [UserInterface]. 
+///
+/// There are two types of Components:
+///
+/// "root components" are standalone components that may be registered in a [UserInterface].
 /// They have independent [state], [computedState], and [handlers].
 /// They are not injected into other components.
-/// 
-/// "sub-components" are child components that are injected into either a root component or another sub-component with a root. 
+///
+/// "sub-components" are child components that are injected into either a root component or another sub-component with a root.
 /// They receive a copy of the root's `state`, `computedState` and `handlers`.
 /// Whenever a sub-component calls [Component.setState], it is actually setting the `state` of its root component.
 /// Sub-components may retain their own `computedState` values, as long as they are uniquely keyed from the root component.
@@ -113,12 +117,12 @@ class Component {
   Map<String, dynamic Function(Component)> computedState;
 
   /// A handler is an event listener that returns a callback function. Example: `key: (e) => (self) => self.setState('...', ...)`
-  /// 
+  ///
   /// A handler should be passed into a sub-component's event listener, like so: `onClick.listen((e) => self.getHandler('key', e))`
   Map<String, void Function(Component) Function(Event)> handlers;
   Component _root;
 
-  /// Creates a new Component with a required [template]. 
+  /// Creates a new Component with a required [template].
   Component(
       {@required this.template,
       this.id,
@@ -245,14 +249,13 @@ class Component {
     return handlers[key](e)(this);
   }
 
-  /// injectComponent adds a sub-component to the current component. 
+  /// injectComponent adds a sub-component to the current component.
   /// Useful for giving a sub-component access to root component properties.
   ///
   /// First injects the current component's [state], [computedState], and [handlers],
   /// and then renders the sub-component's template as an HTML Element.
   /// If the calling component is a root component, then the injected component and all its children will have it as their root.
   /// The root will overwrite all sub-component states and handlers, but the sub-component may maintain unique computedState keys.
-
 
   Element injectComponent(Component component) {
     if (computedState == null) {
@@ -293,14 +296,14 @@ abstract class _ReactifyException implements Exception {
   }
 }
 
-/// A KeyException is thrown whenever a missing key has been referenced at runtime, such as in 
+/// A KeyException is thrown whenever a missing key has been referenced at runtime, such as in
 /// [Component.getState], [Component.setState], [Component.getComputed], or [Component.getHandler].
 class KeyException extends _ReactifyException {
   KeyException(String message, [Component component])
       : super(message, component);
 }
 
-/// A ValueException is thrown whenever an invalid value has been called, 
+/// A ValueException is thrown whenever an invalid value has been called,
 /// such as initializing a [UserInterface] with no components.
 class ValueException extends _ReactifyException {
   ValueException(String message, [Component component])
