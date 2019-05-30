@@ -27,7 +27,8 @@ Write in Dart, transpile to Javascript, then use in HTML just like you'd expect.
 `import 'package:reactify/reactify.dart' as reactify;`
 
 ## Basic Usage
-For working examples, see [here](example/README.md).
+For working examples, see the [counter](https://jovial-thompson-4120e1.netlify.com/) (basic) and [game](https://quirky-hopper-9fb9b9.netlify.com/) (advanced).
+Source code and documentation [here](example/README.md).
 
 If you are unfamiliar with how Dart implements HTML elements and DOM manipulation with `dart:html`, you may want to reference the excellent official tutorial [here](https://dart.dev/tutorials/web/low-level-html/connect-dart-html).
 

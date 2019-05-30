@@ -2,3 +2,4 @@
 pubspec.lock
 .packages
 doc/
+netlify/
