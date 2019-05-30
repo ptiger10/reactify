@@ -11,3 +11,7 @@
 ## 1.0.2
 
 - Added main.dart.js files to examples so that one can view them simply by opening index.html in a browser'
+
+## 1.0.3
+
+- Added hosted links to examples

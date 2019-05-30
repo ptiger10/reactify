@@ -34,6 +34,7 @@ final Game = reactify.Component(
             self.setState('target', self.getComputed('setTarget'));
             self.setState('moves', 0);
             self.setState('currentNumber', 0);
+            self.setState('incrementor', 1);
           },
       'incrementMoves': (_) =>
           (self) => self.setState('moves', self.getState('moves') + 1),
@@ -42,7 +43,11 @@ final Game = reactify.Component(
       'setTarget': (self) {
         final r = Random(DateTime.now().millisecondsSinceEpoch);
         final boundary = self.getState('boundary');
-        return r.nextInt(boundary * 2) - boundary;
+        final target = r.nextInt(boundary * 2) - boundary;
+        if (target == 0) {
+          return self.getComputed('setTarget');
+        }
+        return target;
       },
       'atTarget': (self) =>
           self.getState('target') == self.getState('currentNumber')
@@ -65,8 +70,10 @@ final LoggedIn = reactify.Component(
             ..children.addAll([
               self.injectComponent(Incrementor),
               BRElement(),
-              self.injectComponent(Message),
+              self.injectComponent(Status),
+              BRElement(),
               self.injectComponent(Reset),
+              BRElement(),
               self.injectComponent(Score),
             ])),
         self.injectComponent(Deactivate)
@@ -80,13 +87,14 @@ final Title = reactify.Component(template: (self) {
     ..children.add(DivElement()
       ..className = 'subtitle'
       ..children.addAll([
-        DivElement()
-          ..text =
-              'A number is hidden between -${boundary + 1} and $boundary (exclusive).',
-        DivElement()
-          ..text =
-              'You start at 0. To change your number, first specify the rate of change.',
-        DivElement()..text = 'Find it in as few moves as possible.'
+        UListElement()
+          ..children.addAll([
+            LIElement()
+              ..text =
+                  'I am a number between -${boundary + 1} and $boundary (exclusive)',
+            LIElement()
+              ..text = 'Starting from 0, find me in as few moves as possible'
+          ])
       ]));
 });
 
@@ -95,8 +103,7 @@ final Incrementor = reactify.Component(
       ..children.addAll([
         LabelElement()
           ..htmlFor = 'incrementor'
-          ..text = 'Set the rate of change:'
-          ..style.paddingRight = '5px',
+          ..text = 'Set the rate of change:',
         InputElement(type: 'text')
           ..id = 'incrementor'
           ..autocomplete = 'off'
@@ -105,49 +112,53 @@ final Incrementor = reactify.Component(
           ..onBlur.listen((e) => self.getHandler('changeIncrementor', e)),
         DivElement()
           ..className = 'annotation'
-          ..text = "- may be positive or negative"
-          ..style.display = 'inline',
+          ..text = "may be positive or negative",
         ButtonElement()
-          ..text =
-              "Click here to change current number by ${self.getState('incrementor')}"
+          ..text = "Change current number by ${self.getState('incrementor')}"
           ..onClick.listen((_) => self.getHandler('increment', _))
           ..onClick.listen((_) => self.getHandler('incrementMoves', _)),
       ]));
+
+final Status = reactify.Component(
+    id: 'status',
+    template: (self) => DivElement()
+      ..children.addAll([
+        DivElement()
+          ..id = 'current-number'
+          ..text = self.getState('currentNumber').toString(),
+        DivElement()
+          ..className = 'annotation'
+          ..text = "Current Number",
+        DivElement()..innerHtml = self.getComputed('over-under')
+      ]),
+    computedState: {
+      'over-under': (self) {
+        var currentNumber = self.getState('currentNumber');
+        var t = self.getState('target');
+        String preposition;
+        if (currentNumber > t) {
+          preposition = "Above";
+        } else if (currentNumber == t) {
+          preposition = "You found";
+        } else {
+          preposition = "Below";
+        }
+        return '<b>${preposition}</b> the hidden number.';
+      }
+    });
 
 final Reset = reactify.Component(
     template: (self) => DivElement()
       ..children.addAll([
         ButtonElement()
-          ..text = "Reset"
+          ..text = "RESET"
           ..onClick.listen((_) => self.getHandler('initialize', _))
           ..style.display = 'inline',
         DivElement()
           ..className = 'annotation'
-          ..text = "- re-hides the number and resets your moves"
-          ..style.display = 'inline'
+          ..text = "re-hide the number & reset moves",
+        DivElement()..text = "Total Moves: ${self.getState('moves')}",
       ]));
-
-final Message = reactify.Component(
-    id: 'message',
-    template: (self) => DivElement()
-      ..innerHtml = self.getComputed('message')
-      ..children.add(DivElement()..text = "Moves: ${self.getState('moves')}"),
-    computedState: {
-      'message': (self) {
-        var currentNumber = self.getState('currentNumber');
-        var t = self.getState('target');
-        String preposition;
-        if (currentNumber > t) {
-          preposition = "above";
-        } else if (currentNumber == t) {
-          preposition = "at";
-        } else {
-          preposition = "below";
-        }
-        // var prepositionElem = DivElement()..text=preposition..style.fontWeight = 'bold';
-        return 'Your current number is $currentNumber. You are <b>${preposition}</b> the hidden number.';
-      }
-    });
 
 final Score = reactify.Component(
     id: 'score',
@@ -177,5 +188,4 @@ final Deactivate = reactify.Component(
       ..className = 'title'
       ..children.add(ButtonElement()
         ..text = 'Bored? Stop the game...'
-        ..style.textAlign = 'center'
         ..onClick.listen((_) => UI.setGlobal('loggedIn', false))));
