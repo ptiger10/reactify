@@ -179,6 +179,7 @@ final Score = reactify.Component(
 
 final Activate = reactify.Component(
     template: (self) => ButtonElement()
+      ..className = 'global'
       ..text = 'Start the game...'
       ..onClick.listen((_) => UI.setGlobal('loggedIn', true))
       ..onClick.listen((_) => self.getHandler('initialize', _)));
@@ -187,5 +188,6 @@ final Deactivate = reactify.Component(
     template: (self) => DivElement()
       ..className = 'title'
       ..children.add(ButtonElement()
+        ..className = 'global'
         ..text = 'Bored? Stop the game...'
         ..onClick.listen((_) => UI.setGlobal('loggedIn', false))));

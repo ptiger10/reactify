@@ -15,6 +15,11 @@ button {
 
 }
 
+button.global {
+    background-color: silver;
+    border: 2px black solid;
+}
+
 .title {
     width: 100%;
     font-size: 24px;
