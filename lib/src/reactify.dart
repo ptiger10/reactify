@@ -1,5 +1,6 @@
 import 'dart:html';
 import 'package:meta/meta.dart';
+import "package:collection/collection.dart";
 
 // [START UserInterface]
 /// A UserInterface is a List of root [Component]s and optional `globalState`.
@@ -121,6 +122,11 @@ class Component {
   /// A handler should be passed into a sub-component's event listener, like so: `onClick.listen((e) => self.getHandler('key', e))`
   Map<String, void Function(Component) Function(Event)> handlers;
   Component _root;
+  Element _tree;
+
+  /// The lastDomChanges Map identifies the selectors used to make the most recent changes to DOM,
+  /// and a description of the changes. Useful for evaluating the output of the _reconcile function and testing.
+  Map<String, String> lastDOMChanges;
 
   /// Creates a new Component with a required [template].
   Component(
@@ -149,9 +155,13 @@ class Component {
           'If it does not use the `() =>` syntax, it must have the `return` keyword',
           this);
     }
-    if (id != null) {
-      elem.id = "component-$id";
+    if (_root == null && id == null) {
+      throw ValueException(
+          'render() failed: root component must have an `id`', this);
     }
+
+    elem.id = "component-$id";
+    _tree = elem;
     return elem;
   }
 
@@ -161,22 +171,26 @@ class Component {
   /// A root Component must have an id that is set during construction.
   /// If a root Component id has been changed outside the constructor function, this will likely throw an exception.
   void _refresh() {
-    String selector;
-    Element replacement;
+    String baseSelector;
+    Element replacementTree;
+    Element priorTree;
+    var changes = new Map<String, String>();
+    // always reconcile from the root component
     if (_root != null) {
-      selector = "component-${_root.id}";
-      replacement = _root.render();
+      _root._refresh();
+      return;
     } else {
-      selector = "component-$id";
-      replacement = render();
+      baseSelector = "#component-$id";
+      priorTree = _tree;
+      replacementTree = render();
+
+      // reconcile prior VDOM tree to updated VDOM tree
+      lastDOMChanges =
+          _reconcile(priorTree, replacementTree, baseSelector, changes);
+      _tree = replacementTree;
+      // print("Changes to DOM: $lastDOMChanges");
     }
 
-    var el = document.getElementById(selector);
-    if (el == null) {
-      throw ValueException(
-          'refresh() failed: invalid id tag: "#$selector"', this);
-    }
-    el.replaceWith(replacement);
     return;
   }
 
@@ -204,7 +218,6 @@ class Component {
           'setState() failed: "$key" not in state ${state.keys}', this);
     }
     state[key] = value;
-
     _refresh();
   }
 
@@ -280,6 +293,59 @@ class Component {
   }
 }
 // [END Component]
+
+/// _reconcile compares two elements and outputs every querySelector that needs to be called
+/// and the replacement that was inserted there
+Map<String, String> _reconcile(Element oldElem, Element newElem,
+    String selector, Map<String, String> changes) {
+  final diffNumChildren = oldElem.children.length != newElem.children.length;
+  final diffType = oldElem.runtimeType != newElem.runtimeType;
+  final requiresNodeReplacement = diffNumChildren || diffType;
+  if (diffNumChildren) {
+    changes[selector] =
+        "diffChildren -> old: ${oldElem.children.length}; new: ${newElem.children.length}";
+  }
+  if (diffType) {
+    changes[selector] =
+        "diffType -> old: ${oldElem.runtimeType}; new: ${newElem.runtimeType}";
+  }
+  if (requiresNodeReplacement) {
+    document.querySelector(selector).replaceWith(newElem);
+    return changes;
+  }
+
+  if (oldElem.outerHtml != newElem.outerHtml) {
+    bool diffText;
+    final barren = !oldElem.hasChildNodes() && !newElem.hasChildNodes();
+    if (barren) {
+      diffText = false;
+    } else {
+      diffText =
+          oldElem.childNodes[0].nodeValue != newElem.childNodes[0].nodeValue;
+    }
+
+    final diffAttr = !DeepCollectionEquality()
+        .equals(oldElem.attributes, newElem.attributes);
+
+    if (diffText) {
+      changes[selector] =
+          "diffText -> old: ${oldElem.childNodes[0].text};\nnew: ${newElem.childNodes[0].text}";
+      document.querySelector(selector).childNodes[0].text =
+          newElem.childNodes[0].text;
+    }
+    if (diffAttr) {
+      changes[selector] =
+          "diffAttr -> old: ${oldElem.attributes};\nnew: ${newElem.attributes}";
+      document.querySelector(selector).attributes = newElem.attributes;
+    }
+    for (var i = 0; i < newElem.children.length; i++) {
+      var append = " > :nth-child(${i + 1})";
+      _reconcile(
+          oldElem.children[i], newElem.children[i], selector + append, changes);
+    }
+  }
+  return changes;
+}
 
 // [START Exceptions]
 /// ReactifyException is an abstract base class for custom exceptions

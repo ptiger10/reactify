@@ -167,13 +167,16 @@ void main() {
       expect(document.querySelector("#component-1").text, equals('1'));
     });
     test(".initialize()", () {
-      var c1 = Component(template: (_) => DivElement());
-      var c2 = Component(template: (_) => ButtonElement());
+      var c1 = Component(id: '1', template: (_) => DivElement());
+      var c2 = Component(id: '2', template: (_) => ButtonElement());
 
       var UI = UserInterface(components: [c1, c2]);
       var want = DivElement()
         ..id = 'root'
-        ..children.addAll([DivElement(), ButtonElement()]);
+        ..children.addAll([
+          DivElement()..id = 'component-1',
+          ButtonElement()..id = 'component-2'
+        ]);
       expect(UI.initialize().outerHtml, equals(want.outerHtml));
     });
   });
@@ -190,11 +193,14 @@ void main() {
 
     test(".getState()", () {
       var c = Component(
+          id: '1',
           template: (self) =>
               DivElement()..text = self.getState('test').toString(),
           state: {'test': 123});
       document.body.children.add(c.render());
-      var want = DivElement()..text = "123";
+      var want = DivElement()
+        ..text = "123"
+        ..id = 'component-1';
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
     });
 
@@ -303,6 +309,97 @@ void main() {
           ..text = 'rootComputed'
           ..children.add(DivElement()..text = 'subComputed'));
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
+    });
+  });
+  group('diffing algorithm (_reconcile)', () {
+    test("type has changed", () {
+      var c = Component(
+          id: 'root',
+          template: (self) => (self.getState('root') as Element)
+            ..onClick.listen((_) => self.setState(
+                'root',
+                ButtonElement()
+                  ..children.add(DivElement()..children.add(DivElement())))),
+          state: {
+            'root': DivElement()
+              ..children.add(DivElement()..children.add(DivElement()))
+          });
+      document.body.children.add(c.render());
+      var want = "#component-root";
+      querySelector("#component-root").dispatchEvent(MouseEvent('click'));
+      expect(c.lastDOMChanges.keys.length, equals(1));
+      if (!c.lastDOMChanges.keys.contains(want)) {
+        fail("lastDOM is missing expected key: $want");
+      } else {
+        expect(c.lastDOMChanges[want],
+            equals("diffType -> old: DivElement; new: ButtonElement"));
+      }
+    });
+    test("number of children has changed", () {
+      var c = Component(
+          id: 'root',
+          template: (self) => (self.getState('root') as Element)
+            ..onClick.listen((_) => self.setState('root',
+                DivElement()..children.addAll([DivElement(), DivElement()]))),
+          state: {'root': DivElement()..children.add(DivElement())});
+      document.body.children.add(c.render());
+      var want = "#component-root";
+      querySelector("#component-root").dispatchEvent(MouseEvent('click'));
+      expect(c.lastDOMChanges.keys.length, equals(1));
+      if (!c.lastDOMChanges.keys.contains(want)) {
+        fail("lastDOM is missing expected key: $want");
+      } else {
+        expect(
+            c.lastDOMChanges[want], equals("diffChildren -> old: 1; new: 2"));
+      }
+    });
+    test("text has changed", () {
+      var c = Component(
+          id: 'root',
+          template: (self) => DivElement()
+            ..children.add(DivElement()
+              ..children.add(DivElement()
+                ..className = 'child'
+                ..text = self.getState('root'))
+              ..onClick.listen((_) =>
+                  self.setState('root', self.getState('root') + 'spam'))),
+          state: {'root': 'spam'});
+      document.body.children.add(c.render());
+      var want = "#component-root > :nth-child(1) > :nth-child(1)";
+      querySelector("#component-root .child")
+          .dispatchEvent(MouseEvent('click'));
+      expect(c.lastDOMChanges.keys.length, equals(1));
+      if (!c.lastDOMChanges.keys.contains(want)) {
+        fail("lastDOM is missing expected key: $want");
+      } else {
+        expect(c.lastDOMChanges[want],
+            equals("diffText -> old: spam;\nnew: spamspam"));
+      }
+    });
+    test("class has changed", () {
+      var c = Component(
+          id: 'root',
+          template: (self) => DivElement()
+            ..children.add(DivElement()
+              ..children.add(DivElement()
+                ..className = 'child'
+                ..classes.add(self.getState('root')))
+              ..onClick.listen((_) =>
+                  self.setState('root', self.getState('root') + 'spam'))),
+          state: {'root': 'spam'});
+      document.body.children.add(c.render());
+      var want = "#component-root > :nth-child(1) > :nth-child(1)";
+      querySelector("#component-root .child")
+          .dispatchEvent(MouseEvent('click'));
+      expect(c.lastDOMChanges.keys.length, equals(1));
+      if (!c.lastDOMChanges.keys.contains(want)) {
+        fail("lastDOM is missing expected key: $want");
+      } else {
+        expect(
+            c.lastDOMChanges[want],
+            equals(
+                "diffAttr -> old: {class: child spam};\nnew: {class: child spamspam}"));
+      }
     });
   });
 }
