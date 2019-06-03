@@ -60,22 +60,22 @@ final LoggedOut = reactify.Component(
 
 final LoggedIn = reactify.Component(
     template: (self) => DivElement()
+      ..id = 'loggedIn'
       ..children.addAll([
         self.injectComponent(Title),
         DivElement()
-          ..children.add(DivElement()
-            ..className = 'main'
-            ..style.backgroundColor =
-                self.getComputed('atTarget') ? 'gold' : 'white'
-            ..children.addAll([
-              self.injectComponent(Incrementor),
-              BRElement(),
-              self.injectComponent(Status),
-              BRElement(),
-              self.injectComponent(Reset),
-              BRElement(),
-              self.injectComponent(Score),
-            ])),
+          ..className = 'gameBox'
+          ..style.backgroundColor =
+              self.getComputed('atTarget') ? 'gold' : 'white'
+          ..children.addAll([
+            self.injectComponent(Incrementor),
+            BRElement(),
+            self.injectComponent(Status),
+            BRElement(),
+            self.injectComponent(Reset),
+            BRElement(),
+            self.injectComponent(Score),
+          ]),
         self.injectComponent(Deactivate)
       ]));
 
@@ -99,17 +99,19 @@ final Title = reactify.Component(template: (self) {
 });
 
 final Incrementor = reactify.Component(
+    id: 'incrementor',
     template: (self) => DivElement()
+      ..className = 'incrementor'
       ..children.addAll([
         LabelElement()
-          ..htmlFor = 'incrementor'
+          ..htmlFor = 'incrementorInput'
           ..text = 'Set the rate of change:',
         InputElement(type: 'text')
-          ..id = 'incrementor'
-          ..autocomplete = 'off'
+          ..id = 'incrementorInput'
           ..value = self.getState('incrementor').toString()
+          ..autocomplete = 'off'
           ..onClick.listen((e) => (e.target as InputElement).select())
-          ..onBlur.listen((e) => self.getHandler('changeIncrementor', e)),
+          ..onInput.listen((e) => self.getHandler('changeIncrementor', e)),
         DivElement()
           ..className = 'annotation'
           ..text = "may be positive or negative",

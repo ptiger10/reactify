@@ -167,13 +167,13 @@ void main() {
       expect(document.querySelector("#component-1").text, equals('1'));
     });
     test(".initialize()", () {
-      var c1 = Component(template: (_) => DivElement());
-      var c2 = Component(template: (_) => ButtonElement());
+      var c1 = Component(id: '1', template: (_) => DivElement());
+      var c2 = Component(id: '2', template: (_) => ButtonElement());
 
       var UI = UserInterface(components: [c1, c2]);
       var want = DivElement()
         ..id = 'root'
-        ..children.addAll([DivElement(), ButtonElement()]);
+        ..children.addAll([DivElement()..id='component-1', ButtonElement()..id='component-2']);
       expect(UI.initialize().outerHtml, equals(want.outerHtml));
     });
   });
@@ -190,11 +190,12 @@ void main() {
 
     test(".getState()", () {
       var c = Component(
+        id: '1',
           template: (self) =>
               DivElement()..text = self.getState('test').toString(),
           state: {'test': 123});
       document.body.children.add(c.render());
-      var want = DivElement()..text = "123";
+      var want = DivElement()..text = "123"..id='component-1';
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
     });
 
@@ -304,5 +305,28 @@ void main() {
           ..children.add(DivElement()..text = 'subComputed'));
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
     });
+  });
+  group('diffing algorithm (_compare)', () {
+    test("successful isolated change", () {
+     var c = Component(
+        id: 'root',
+        template: (self) => DivElement()
+          ..children.add(DivElement()
+          ..children.add(DivElement()
+            ..className = 'child'
+            ..text = self.getState('root'))
+            ..onClick.listen((_)=> self.setState('root', self.getState('root')+'spam'))),
+            state: {'root': 'spam'});
+      document.body.children.add(c.render());
+        var want = "#component-root > :nth-child(1) > :nth-child(1)";
+      querySelector("#component-root .child")
+          .dispatchEvent(MouseEvent('click'));
+        expect(c.lastDOMChange.keys.length, equals(1));
+        if (!c.lastDOMChange.keys.contains(want)) {
+          fail("lastDOM is missing expected key: $want");
+        } else {
+        expect(c.lastDOMChange[want], equals("diffText: old: spam;\nnew: spamspam"));
+        }
+    });   
   });
 }

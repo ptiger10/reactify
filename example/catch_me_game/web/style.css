@@ -30,7 +30,7 @@ button.global {
     align-items: center;
 }
 
-.main {
+.gameBox {
     border: 1px solid black;
     padding: 20px;
     display: grid;
@@ -80,6 +80,6 @@ input {
     font-weight: bold;
 }
 
-#incrementor {
+#incrementorInput {
     width: 20px;
 }

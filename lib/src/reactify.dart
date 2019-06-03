@@ -1,5 +1,6 @@
 import 'dart:html';
 import 'package:meta/meta.dart';
+import "package:collection/collection.dart";
 
 // [START UserInterface]
 /// A UserInterface is a List of root [Component]s and optional `globalState`.
@@ -62,6 +63,7 @@ class UserInterface {
       throw KeyException(
           'setGlobal() failed: unable to set global state value: $key not in globalState ${globalState.keys}');
     }
+    print('global state change triggered by change in $this');
     globalState[key] = value;
 
     _refreshAll();
@@ -121,6 +123,8 @@ class Component {
   /// A handler should be passed into a sub-component's event listener, like so: `onClick.listen((e) => self.getHandler('key', e))`
   Map<String, void Function(Component) Function(Event)> handlers;
   Component _root;
+  Element _tree;
+  Map<String, String> lastDOMChange;
 
   /// Creates a new Component with a required [template].
   Component(
@@ -149,9 +153,13 @@ class Component {
           'If it does not use the `() =>` syntax, it must have the `return` keyword',
           this);
     }
-    if (id != null) {
-      elem.id = "component-$id";
+    if (_root == null && id == null) {
+      throw ValueException(
+          'render() failed: root component must have an `id`', this);
     }
+
+    elem.id = "component-$id";
+    _tree = elem;
     return elem;
   }
 
@@ -161,22 +169,33 @@ class Component {
   /// A root Component must have an id that is set during construction.
   /// If a root Component id has been changed outside the constructor function, this will likely throw an exception.
   void _refresh() {
-    String selector;
-    Element replacement;
+    String baseSelector;
+    Element replacementTree;
+    Element priorTree;
+    var changes = new Map<String, String>();
+    // do not re-render child elements outside of the reconciliation process
     if (_root != null) {
-      selector = "component-${_root.id}";
-      replacement = _root.render();
+      _root._refresh();
+      return;
+      // baseSelector = "#component-${_root.id}";
+      // priorTree = _root._tree;
+      // replacementTree = _root.render();
     } else {
-      selector = "component-$id";
-      replacement = render();
+      baseSelector = "#component-$id";
+      priorTree = _tree;
+      replacementTree = render();
+
+      // _tree = replacementTree;
+
+      // reconciliation
+      final domChanges =
+          _compare(priorTree, replacementTree, baseSelector, changes);
+      // print(' -> New VDOM: ${replacementTree.outerHtml}');
+      _tree = replacementTree;
+      lastDOMChange = domChanges;
+      print("Changes to DOM: $lastDOMChange");
     }
 
-    var el = document.getElementById(selector);
-    if (el == null) {
-      throw ValueException(
-          'refresh() failed: invalid id tag: "#$selector"', this);
-    }
-    el.replaceWith(replacement);
     return;
   }
 
@@ -196,6 +215,7 @@ class Component {
   /// setState changes a [state] value on a root component and then re-renders from the root.
   /// If key does not exist in the root state, this throws an exception.
   void setState(String key, dynamic value) {
+    print('state change triggered by change in $this');
     if (state == null) {
       throw ValueException('setState() failed: state cannot be null', this);
     }
@@ -204,7 +224,6 @@ class Component {
           'setState() failed: "$key" not in state ${state.keys}', this);
     }
     state[key] = value;
-
     _refresh();
   }
 
@@ -280,6 +299,72 @@ class Component {
   }
 }
 // [END Component]
+
+/// _compare compares two elements and outputs every querySelector that needs to be called
+/// and the element that should be inserted into it
+Map<String, String> _compare(Element oldElem, Element newElem, String selector,
+    Map<String, String> changes) {
+  print('diffing trees: selector $selector');
+  // print('old: ${oldElem.outerHtml}');
+  // print('new: ${newElem.outerHtml}');
+  final diffNumChildren = oldElem.children.length != newElem.children.length;
+  final diffType = oldElem.runtimeType != newElem.runtimeType;
+  if (diffNumChildren) {
+    changes[selector] =
+        "diffChildren: old: ${oldElem.children.length}; new: ${newElem.children.length}";
+    // print('DIFFERENT NUM CHILDREN');
+  }
+  if (diffType) {
+    changes[selector] =
+        "diffTypes: old: ${oldElem.runtimeType}; new: ${oldElem.runtimeType}";
+    // print('DIFFERENT TYPES');
+  }
+  if (diffNumChildren || diffType) {
+    document.querySelector(selector).replaceWith(newElem);
+  } else {
+    // print('no type or children differences');
+    if (oldElem.outerHtml != newElem.outerHtml) {
+      // print('different outerhtml for $selector: old: ${oldElem.outerHtml}\nnew: ${newElem.outerHtml}');
+      bool diffText;
+      if (!oldElem.hasChildNodes() && !newElem.hasChildNodes()) {
+        diffText = false;
+      } else if (oldElem.childNodes[0].nodeValue !=
+          newElem.childNodes[0].nodeValue) {
+        diffText = true;
+      } else {
+        diffText = false;
+      }
+      final diffAttr = !DeepCollectionEquality()
+          .equals(oldElem.attributes, newElem.attributes);
+
+      if (diffText) {
+        changes[selector] =
+            "diffText: old: ${oldElem.childNodes[0].text};\nnew: ${newElem.childNodes[0].text}";
+        // print("prior text: ${document.querySelector(selector).text}");
+        document.querySelector(selector).childNodes[0].text =
+            newElem.childNodes[0].text;
+        // print('DIFFERENT TEXT');
+        // print('old text: ${oldElem.childNodes[0].text}');
+        // print('new text: ${newElem.childNodes[0].text}');
+      }
+      if (diffAttr) {
+        changes[selector] =
+            "diffAttr: old: ${oldElem.attributes};\nnew: ${newElem.attributes}";
+        document.querySelector(selector).attributes = newElem.attributes;
+        // print('DIFFERENT ATTR');
+      }
+      // print('no immediate text or attr differences, recursing');
+      for (var i = 0; i < newElem.children.length; i++) {
+        var append = " > :nth-child(${i + 1})";
+        _compare(oldElem.children[i], newElem.children[i], selector + append,
+            changes);
+      }
+    } else {
+      // print('no outerhtml differences, skipping');
+    }
+  }
+  return changes;
+}
 
 // [START Exceptions]
 /// ReactifyException is an abstract base class for custom exceptions
