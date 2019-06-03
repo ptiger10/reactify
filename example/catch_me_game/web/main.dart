@@ -20,21 +20,21 @@ final Game = reactify.Component(
     },
     state: {
       'currentNumber': 0,
-      'incrementor': 1,
+      'guess': 1,
       'target': 0,
       'moves': 0,
       'boundary': 20,
     },
     handlers: {
-      'increment': (_) => (self) => self.setState('currentNumber',
-          self.getState('currentNumber') + self.getState('incrementor')),
-      'changeIncrementor': (e) => (self) => self.setState(
-          'incrementor', int.parse((e.target as InputElement).value)),
+      'increment': (_) =>
+          (self) => self.setState('currentNumber', self.getState('guess')),
+      'changeGuess': (e) => (self) =>
+          self.setState('guess', int.parse((e.target as InputElement).value)),
       'initialize': (_) => (self) {
             self.setState('target', self.getComputed('setTarget'));
             self.setState('moves', 0);
             self.setState('currentNumber', 0);
-            self.setState('incrementor', 1);
+            self.setState('guess', 1);
           },
       'incrementMoves': (_) =>
           (self) => self.setState('moves', self.getState('moves') + 1),
@@ -68,12 +68,9 @@ final LoggedIn = reactify.Component(
           ..style.backgroundColor =
               self.getComputed('atTarget') ? 'gold' : 'white'
           ..children.addAll([
-            self.injectComponent(Incrementor),
-            BRElement(),
+            self.injectComponent(guess),
             self.injectComponent(Status),
-            BRElement(),
             self.injectComponent(Reset),
-            BRElement(),
             self.injectComponent(Score),
           ]),
         self.injectComponent(Deactivate)
@@ -98,25 +95,27 @@ final Title = reactify.Component(template: (self) {
       ]));
 });
 
-final Incrementor = reactify.Component(
-    id: 'incrementor',
+final guess = reactify.Component(
+    id: 'guess',
     template: (self) => DivElement()
-      ..className = 'incrementor'
+      ..className = 'guess'
       ..children.addAll([
         LabelElement()
-          ..htmlFor = 'incrementorInput'
-          ..text = 'Set the rate of change:',
-        InputElement(type: 'text')
-          ..id = 'incrementorInput'
-          ..value = self.getState('incrementor').toString()
+          ..htmlFor = 'guessInput'
+          ..text = 'Pick a number:',
+        InputElement(type: 'range')
+          ..min = '-20'
+          ..max = '19'
+          ..id = 'guessInput'
+          ..value = self.getState('guess').toString()
           ..autocomplete = 'off'
           ..onClick.listen((e) => (e.target as InputElement).select())
-          ..onInput.listen((e) => self.getHandler('changeIncrementor', e)),
-        DivElement()
-          ..className = 'annotation'
-          ..text = "may be positive or negative",
+          ..onInput.listen((e) => self.getHandler('changeGuess', e)),
+        // DivElement()
+        //   ..className = 'annotation'
+        //   ..text = "may be positive or negative",
         ButtonElement()
-          ..text = "Change current number by ${self.getState('incrementor')}"
+          ..text = "Set current number to ${self.getState('guess')}"
           ..onClick.listen((_) => self.getHandler('increment', _))
           ..onClick.listen((_) => self.getHandler('incrementMoves', _)),
       ]));
