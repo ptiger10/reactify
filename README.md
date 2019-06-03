@@ -21,10 +21,12 @@ Typed, tested, and tiny.
 Write in Dart, transpile to Javascript, then use in HTML just like you'd expect.
 
 ## Installing
+Must first install the [Dart SDK](https://dart.dev/get-dart)
 
-[Installation Instructions](https://pub.dev/packages/reactify#-installing-tab-)
+Package installation [instructions](https://pub.dev/packages/reactify#-installing-tab-)
+Convention for import: `import 'package:reactify/reactify.dart' as reactify;`
 
-`import 'package:reactify/reactify.dart' as reactify;`
+To run in a browser, transpile into JS using either `dart2js` or `webdev serve`. Instructions [below](##Transpiling-to-Javascript)
 
 ## Basic Usage
 For working examples, see the [counter](https://jovial-thompson-4120e1.netlify.com/) (basic) and [game](https://quirky-hopper-9fb9b9.netlify.com/) (advanced).
@@ -151,7 +153,7 @@ Dart is not supported by browsers natively, so must be converted to Javascript f
 - Option 2:  `$ webdev serve` ([docs](https://dart.dev/tools/webdev#serve)) - enables faster load times, auto-transpiling, and page refreshing on save. Recommended for development, but be aware of the gotchas**. Notable requirements:
     -  Working directory must contain a `pubspec.yaml` file and a `/web` directory
     - `/web` must contain a file called `index.html` which serves as entrypoint for the server
-    - `pubspec.yaml` must specify `build_runner` and `build_web_compilers` as dev_dependencies
+    - `pubspec.yaml` must specify `build_runner`, `build_web_compilers`, and `build_daemon` as dev_dependencies
 
 
 *To customize on-save behavior in VSCode, you need a `build task` and a custom `Keyboard Shortcut`. A simple build task could be:
