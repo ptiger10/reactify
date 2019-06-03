@@ -24,9 +24,10 @@ Write in Dart, transpile to Javascript, then use in HTML just like you'd expect.
 Must first install the [Dart SDK](https://dart.dev/get-dart)
 
 Package installation [instructions](https://pub.dev/packages/reactify#-installing-tab-)
+
 Convention for import: `import 'package:reactify/reactify.dart' as reactify;`
 
-To run in a browser, transpile into JS using either `dart2js` or `webdev serve`. Instructions [below](##Transpiling-to-Javascript)
+To run in a browser, transpile into JS using either `dart2js` or `webdev serve`. Instructions [below](#transpiling-to-javascript)
 
 ## Basic Usage
 For working examples, see the [counter](https://jovial-thompson-4120e1.netlify.com/) (basic) and [game](https://quirky-hopper-9fb9b9.netlify.com/) (advanced).
