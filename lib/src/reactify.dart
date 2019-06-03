@@ -123,6 +123,7 @@ class Component {
   Map<String, void Function(Component) Function(Event)> handlers;
   Component _root;
   Element _tree;
+
   /// The lastDomChanges Map identifies the selectors used to make the most recent changes to DOM,
   /// and a description of the changes. Useful for evaluating the output of the _reconcile function and testing.
   Map<String, String> lastDOMChanges;
@@ -319,7 +320,8 @@ Map<String, String> _reconcile(Element oldElem, Element newElem,
     if (barren) {
       diffText = false;
     } else {
-      diffText = oldElem.childNodes[0].nodeValue != newElem.childNodes[0].nodeValue;
+      diffText =
+          oldElem.childNodes[0].nodeValue != newElem.childNodes[0].nodeValue;
     }
 
     final diffAttr = !DeepCollectionEquality()

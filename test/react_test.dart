@@ -349,8 +349,8 @@ void main() {
       if (!c.lastDOMChanges.keys.contains(want)) {
         fail("lastDOM is missing expected key: $want");
       } else {
-        expect(c.lastDOMChanges[want],
-            equals("diffChildren -> old: 1; new: 2"));
+        expect(
+            c.lastDOMChanges[want], equals("diffChildren -> old: 1; new: 2"));
       }
     });
     test("text has changed", () {
