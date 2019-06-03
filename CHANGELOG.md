@@ -24,3 +24,7 @@
   - If two nodes have different outer HTML, check for different text (specifically, check for different childNode[0].nodeValue) and different attributes. Wherever there is a discrepancy between prior and replacement, overwrite with the values from replacement
   - Apply _reconcile recursively, so that the same type/numberChildren/text/attribute check is applied to all child elements with different outer HTML
 - Updated _refresh to delegate upwards so that _reconcile is called on root components only  
+
+## 1.1.1
+
+- If a sub-component has no id, then id is blank (instead of setting id to `component-null`)

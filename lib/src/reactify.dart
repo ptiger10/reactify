@@ -160,7 +160,9 @@ class Component {
           'render() failed: root component must have an `id`', this);
     }
 
-    elem.id = "component-$id";
+    if (id != null) {
+      elem.id = "component-$id";
+    }
     _tree = elem;
     return elem;
   }

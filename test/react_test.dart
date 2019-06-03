@@ -271,7 +271,6 @@ void main() {
       // sub computedState with same name as root is overwritten
       // sub computedState with independent name is retained
       var sub = Component(
-        id: 'sub',
         template: (self) => DivElement()
           ..text = self.getState('root')
           ..children.add(DivElement()
@@ -287,7 +286,8 @@ void main() {
 
       var root = Component(
           id: 'root',
-          template: (self) => self.injectComponent(sub),
+          template: (self) =>
+              DivElement()..children.add(self.injectComponent(sub)),
           state: {
             'root': "original"
           },
@@ -303,12 +303,15 @@ void main() {
           .dispatchEvent(MouseEvent('click'));
       var want = DivElement()
         ..id = 'component-root'
-        ..text = "updated"
         ..children.add(DivElement()
-          ..className = 'child'
-          ..text = 'rootComputed'
-          ..children.add(DivElement()..text = 'subComputed'));
+          ..text = "updated"
+          ..children.add(DivElement()
+            ..className = 'child'
+            ..text = 'rootComputed'
+            ..children.add(DivElement()..text = 'subComputed')));
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
+      expect(document.querySelector("#component-root > :nth-child(1)").id,
+          equals(''));
     });
   });
   group('diffing algorithm (_reconcile)', () {
