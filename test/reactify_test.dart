@@ -5,53 +5,6 @@ import 'dart:html';
 
 void main() {
   setUp(() => document.body.replaceWith(BodyElement()));
-  group('Expected exceptions: UserInterface', () {
-    test(
-        ".getGlobal() with no global state",
-        // ignore: missing_required_param
-        () => expect(() => UserInterface()..getGlobal('test'),
-            throwsA(TypeMatcher<ValueException>())));
-
-    test(
-        ".getGlobal() with unset key",
-        // ignore: missing_required_param
-        () => expect(() => UserInterface(globalState: {})..getGlobal('test'),
-            throwsA(TypeMatcher<KeyException>())));
-
-    test(
-        ".setGlobal() with no global state",
-        // ignore: missing_required_param
-        () => expect(() => UserInterface()..setGlobal('test', '123'),
-            throwsA(TypeMatcher<ValueException>())));
-
-    test(
-        ".setGlobal() with unset key",
-        () => expect(
-            // ignore: missing_required_param
-            () => UserInterface(globalState: {})..setGlobal('test', '123'),
-            throwsA(TypeMatcher<KeyException>())));
-
-    test(
-        ".setGlobal() with no components (triggers .refreshAll())",
-        () => expect(
-            // ignore: missing_required_param
-            () => UserInterface(globalState: {'test': true})
-              ..setGlobal('test', false),
-            throwsA(TypeMatcher<ValueException>())));
-
-    test(".setGlobal() prior to initialize()", () {
-      var c1 = Component(id: '1', template: (_) => DivElement());
-      var UI = UserInterface(components: [c1], globalState: {'test': true});
-      expect(() => UI.setGlobal('test', false),
-          throwsA((TypeMatcher<ValueException>())));
-    });
-
-    test(
-        ".initialize() with no components",
-        // ignore: missing_required_param
-        () => expect(() => UserInterface()..initialize(),
-            throwsA(TypeMatcher<ValueException>())));
-  });
   group('Expected exceptions: Component', () {
     test(
         ".render() with no template",
@@ -149,35 +102,6 @@ void main() {
           template: (self) => self.injectComponent(sub),
           state: {'root': 'notDeleted'});
       expect(() => root.render(), throwsA(TypeMatcher<KeyException>()));
-    });
-  });
-
-  group('Working correctly: UserInterface', () {
-    test(
-        ".setGlobal() and .getGlobal() (which also tests ._refreshAll() and Component._refresh()",
-        () {
-      // ignore: missing_required_param
-      var UI = UserInterface(globalState: {'test': "0"});
-      var c = Component(
-          template: (_) => DivElement()..text = UI.getGlobal('test'), id: '1');
-      UI.components = [c];
-      document.body.children.add(UI.initialize());
-      expect(document.querySelector("#component-1").text, equals('0'));
-      UI.setGlobal('test', '1');
-      expect(document.querySelector("#component-1").text, equals('1'));
-    });
-    test(".initialize()", () {
-      var c1 = Component(id: '1', template: (_) => DivElement());
-      var c2 = Component(id: '2', template: (_) => ButtonElement());
-
-      var UI = UserInterface(components: [c1, c2]);
-      var want = DivElement()
-        ..id = 'root'
-        ..children.addAll([
-          DivElement()..id = 'component-1',
-          ButtonElement()..id = 'component-2'
-        ]);
-      expect(UI.initialize().outerHtml, equals(want.outerHtml));
     });
   });
 
@@ -312,97 +236,6 @@ void main() {
       expect(document.body.children.first.outerHtml, equals(want.outerHtml));
       expect(document.querySelector("#component-root > :nth-child(1)").id,
           equals(''));
-    });
-  });
-  group('diffing algorithm (_reconcile)', () {
-    test("type has changed", () {
-      var c = Component(
-          id: 'root',
-          template: (self) => (self.getState('root') as Element)
-            ..onClick.listen((_) => self.setState(
-                'root',
-                ButtonElement()
-                  ..children.add(DivElement()..children.add(DivElement())))),
-          state: {
-            'root': DivElement()
-              ..children.add(DivElement()..children.add(DivElement()))
-          });
-      document.body.children.add(c.render());
-      var want = "#component-root";
-      querySelector("#component-root").dispatchEvent(MouseEvent('click'));
-      expect(c.lastDOMChanges.keys.length, equals(1));
-      if (!c.lastDOMChanges.keys.contains(want)) {
-        fail("lastDOM is missing expected key: $want");
-      } else {
-        expect(c.lastDOMChanges[want],
-            equals("diffType -> old: DivElement; new: ButtonElement"));
-      }
-    });
-    test("number of children has changed", () {
-      var c = Component(
-          id: 'root',
-          template: (self) => (self.getState('root') as Element)
-            ..onClick.listen((_) => self.setState('root',
-                DivElement()..children.addAll([DivElement(), DivElement()]))),
-          state: {'root': DivElement()..children.add(DivElement())});
-      document.body.children.add(c.render());
-      var want = "#component-root";
-      querySelector("#component-root").dispatchEvent(MouseEvent('click'));
-      expect(c.lastDOMChanges.keys.length, equals(1));
-      if (!c.lastDOMChanges.keys.contains(want)) {
-        fail("lastDOM is missing expected key: $want");
-      } else {
-        expect(
-            c.lastDOMChanges[want], equals("diffChildren -> old: 1; new: 2"));
-      }
-    });
-    test("text has changed", () {
-      var c = Component(
-          id: 'root',
-          template: (self) => DivElement()
-            ..children.add(DivElement()
-              ..children.add(DivElement()
-                ..className = 'child'
-                ..text = self.getState('root'))
-              ..onClick.listen((_) =>
-                  self.setState('root', self.getState('root') + 'spam'))),
-          state: {'root': 'spam'});
-      document.body.children.add(c.render());
-      var want = "#component-root > :nth-child(1) > :nth-child(1)";
-      querySelector("#component-root .child")
-          .dispatchEvent(MouseEvent('click'));
-      expect(c.lastDOMChanges.keys.length, equals(1));
-      if (!c.lastDOMChanges.keys.contains(want)) {
-        fail("lastDOM is missing expected key: $want");
-      } else {
-        expect(c.lastDOMChanges[want],
-            equals("diffText -> old: spam;\nnew: spamspam"));
-      }
-    });
-    test("class has changed", () {
-      var c = Component(
-          id: 'root',
-          template: (self) => DivElement()
-            ..children.add(DivElement()
-              ..children.add(DivElement()
-                ..className = 'child'
-                ..classes.add(self.getState('root')))
-              ..onClick.listen((_) =>
-                  self.setState('root', self.getState('root') + 'spam'))),
-          state: {'root': 'spam'});
-      document.body.children.add(c.render());
-      var want = "#component-root > :nth-child(1) > :nth-child(1)";
-      querySelector("#component-root .child")
-          .dispatchEvent(MouseEvent('click'));
-      expect(c.lastDOMChanges.keys.length, equals(1));
-      if (!c.lastDOMChanges.keys.contains(want)) {
-        fail("lastDOM is missing expected key: $want");
-      } else {
-        expect(
-            c.lastDOMChanges[want],
-            equals(
-                "diffAttr -> old: {class: child spam};\nnew: {class: child spamspam}"));
-      }
     });
   });
 }
